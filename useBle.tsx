@@ -167,12 +167,13 @@ function useBLE(): BluetoothLowEnergyApi {
         device.id,
         SERVICE_UUID,
         WRITE_UUID,
-        btoa('Mensaje de prueba'),
+        btoa('Mensaje de prueba' +'\n'),
       );
     } catch (e) {
       console.log(e);
     }
   };
+  
 
   const startStreamingData = async (device: Device) => {
     if (device) {
