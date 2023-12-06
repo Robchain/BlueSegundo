@@ -4,7 +4,7 @@ import useBLE from './useBle'
 
 export const App = () => {
   const {width} = useWindowDimensions()
-  const {allDevices,connectedDevice,disconnectFromDevice,scanForPeripherals,connectToDevice,requestPermissions} = useBLE();
+  const {allDevices,connectedDevice,disconnectFromDevice,scanForPeripherals,connectToDevice,requestPermissions, exchangeData} = useBLE();
 
   const scandevices =async ()=>{
     requestPermissions((permitido:boolean)=>{
@@ -62,7 +62,7 @@ export const App = () => {
     >
       <Text style={{color:'white', textAlign:'center'}}>Desconetar</Text>
     </Pressable>
-    {/* <Pressable
+    <Pressable
      style={({pressed})=>[
       {...styles.boton, width:width*0.4, marginBottom:10},
 
@@ -71,7 +71,7 @@ export const App = () => {
   onPress={()=>exchangeData(connectedDevice)}
     >
       <Text style={{color:'white', textAlign:'center'}}>Enviar mensaje de prueba</Text>
-    </Pressable> */}
+    </Pressable>
   </View>}
   
     </View>

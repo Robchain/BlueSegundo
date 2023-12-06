@@ -7,10 +7,14 @@ import {
   Characteristic,
   Device,
 } from 'react-native-ble-plx';
+import {atob, btoa} from 'react-native-quick-base64';
 // import {PERMISSIONS, requestMultiple} from 'react-native-permissions';
 // import DeviceInfo from 'react-native-device-info';
 
 // import {atob} from 'react-native-quick-base64';
+const SERVICE_UUID = '1b7e8251-2877-41c3-b46e-cf057c562023';
+const READ_UUID = '8ac32d3f-5cb9-4d44-bec2-ee689169f626';
+const WRITE_UUID = '5e9bf2a8-f93f-4481-a67e-3b2f4a07891a';
 
 const HEART_RATE_UUID = '0000180d-0000-1000-8000-00805f9b34fb';
 const HEART_RATE_CHARACTERISTIC = '00002a37-0000-1000-8000-00805f9b34fb';
@@ -27,13 +31,16 @@ interface BluetoothLowEnergyApi {
   connectedDevice: Device | null;
   allDevices: Device[];
   heartRate: number;
+  exchangeData(
+    device: Device,
+  ): Promise<void>;
 }
 
 function useBLE(): BluetoothLowEnergyApi {
   const [allDevices, setAllDevices] = useState<Device[]>([]);
   const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
   const [heartRate, setHeartRate] = useState<number>(0);
-
+  const [exchangeError, setExchangeError] = useState<BleError | null>(null);
   const requestPermissions = async (cb: VoidCallback) => {
     if (Platform.OS === 'android') {
         const granted = await PermissionsAndroid.request(
@@ -150,6 +157,23 @@ function useBLE(): BluetoothLowEnergyApi {
     setHeartRate(innerHeartRate);
   };
 
+  const exchangeData = async (
+    device: Device,
+  ) => {
+    setExchangeError(null);
+
+    try {
+      await bleManager.writeCharacteristicWithResponseForDevice(
+        device.id,
+        SERVICE_UUID,
+        WRITE_UUID,
+        btoa('Mensaje de prueba'),
+      );
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
   const startStreamingData = async (device: Device) => {
     if (device) {
       device.monitorCharacteristicForService(
@@ -163,6 +187,7 @@ function useBLE(): BluetoothLowEnergyApi {
   };
 
   return {
+    exchangeData,
     scanForPeripherals,
     requestPermissions,
     connectToDevice,
