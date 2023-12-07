@@ -11,7 +11,6 @@ import {atob, btoa} from 'react-native-quick-base64';
 // import {PERMISSIONS, requestMultiple} from 'react-native-permissions';
 // import DeviceInfo from 'react-native-device-info';
 
-// import {atob} from 'react-native-quick-base64';
 const SERVICE_UUID = '1b7e8251-2877-41c3-b46e-cf057c562023';
 const READ_UUID = '8ac32d3f-5cb9-4d44-bec2-ee689169f626';
 const WRITE_UUID = '5e9bf2a8-f93f-4481-a67e-3b2f4a07891a';
@@ -31,6 +30,9 @@ interface BluetoothLowEnergyApi {
   connectedDevice: Device | null;
   allDevices: Device[];
   heartRate: number;
+  response:string|null,
+  loading:boolean,
+  desable:boolean,
   exchangeData(
     device: Device,
   ): Promise<void>;
@@ -40,6 +42,10 @@ function useBLE(): BluetoothLowEnergyApi {
   const [allDevices, setAllDevices] = useState<Device[]>([]);
   const [connectedDevice, setConnectedDevice] = useState<Device | null>(null);
   const [heartRate, setHeartRate] = useState<number>(0);
+  const [buffer, setbuffer] = useState('');
+  const [desable, setdesable] = useState<boolean>(false);
+  const [response, setresponse] = useState<string |null>(null)
+  const [loading, setloading] = useState<boolean>(false);
   const [exchangeError, setExchangeError] = useState<BleError | null>(null);
   const requestPermissions = async (cb: VoidCallback) => {
     if (Platform.OS === 'android') {
@@ -93,24 +99,29 @@ function useBLE(): BluetoothLowEnergyApi {
   const isDuplicteDevice = (devices: Device[], nextDevice: Device) =>
     devices.findIndex(device => nextDevice.id === device.id) > -1;
 
-  const scanForPeripherals = () =>
-  setAllDevices([]);
+  const scanForPeripherals = () =>{
+    setAllDevices([]);
     bleManager.startDeviceScan(null, null, (error, device) => {
       if (error) {
         console.log(error);
       }
       if (device && device?.name) {
-        setAllDevices((prevState: Device[]) => {  
-          if (!isDuplicteDevice(prevState, device)) {
-            return [...prevState, device];
-          }
-          return prevState;
-        });
+        if(device.name ==="MXCHIP_EMB1061"){
+          setAllDevices((prevState: Device[]) => {  
+            if (!isDuplicteDevice(prevState, device)) {
+              return [...prevState, device];
+            }
+            return prevState;
+          });
+
+        }
       }
     });
-
+    
+  }
   const connectToDevice = async (device: Device) => {
     try {
+      setresponse('');
       const deviceConnection = await bleManager.connectToDevice(device.id);
       setConnectedDevice(deviceConnection);
       await deviceConnection.discoverAllServicesAndCharacteristics();
@@ -161,14 +172,35 @@ function useBLE(): BluetoothLowEnergyApi {
     device: Device,
   ) => {
     setExchangeError(null);
-
+    setloading(true);
+    setdesable(true);
+    setresponse(null);
     try {
-      await bleManager.writeCharacteristicWithResponseForDevice(
+      
+
+   
+      await bleManager.writeCharacteristicWithoutResponseForDevice(
         device.id,
         SERVICE_UUID,
         WRITE_UUID,
-        btoa('Mensaje de prueba' +'\n'),
-      );
+        btoa('mm0952815540'),
+      )
+
+      setTimeout(() => {
+        bleManager.readCharacteristicForDevice(
+          device.id,
+          SERVICE_UUID,
+          READ_UUID,
+        ).then(res=>{
+          let output =atob(res.value!)
+          setresponse(output);
+          setloading(false);
+          setdesable(false);
+        })  
+      }, 4000);
+      
+      
+     
     } catch (e) {
       console.log(e);
     }
@@ -187,8 +219,53 @@ function useBLE(): BluetoothLowEnergyApi {
     }
   };
 
-  return {
-    exchangeData,
+//  function scanAndConnect() {
+//     console.log("Scanning Started");
+//     bleManager.startDeviceScan(null, null, (error, device) => {
+//     if (error) {
+//       // Handle error (scanning will be stopped automatically)
+//      console.log("Error in scanning devices:", error);
+//      return
+//      }
+//        // Check if it is a device you are looking for based on advertisement data
+//        // or other criteria.
+//       console.log("Detected Device Details:", device?.id, device?.name);
+//        // ||device.localName === 'BLEPeripheralApp') 
+//        if (device?.name === 'Versa Lite'){ //
+//           // Stop scanning as it's not necessary if you are scanning for one device.
+//           console.log("Device Found, Stopping the Scan.");
+//           console.log("Connecting to:",device?.name)
+//           bleManager.stopDeviceScan();
+//           device?.connect()
+//           .then((device) => {
+//            // this.info("Discovering services and characteristics")
+//            console.log("Connected...Discovering services and characteristics");
+//          return device.discoverAllServicesAndCharacteristics()
+//        })
+//       .then((device) => {
+//         console.log('Services and characteristics discovered');
+//         //return this.testChar(device)
+//         const services = device.services()
+//         console.log(services);
+//         return device.readCharacteristicForService(services)
+//         // device.readCharacteristicForService("abbaff00-e56a-484c-b832-8b17cf6cbfe8")
+//         // this.info("Setting notifications")
+//         //return this.setupNotifications(device)
+//       })
+//       .then(() => {
+//         const characteristicsData =  device.readCharacteristicForService();
+//         console.log(characteristicsData);
+//         //this.info("Listening...")
+//       }, (error) => {
+//         console.warn(error.message);
+//         // this.error(error.message)
+//         })
+//        }
+//      });
+//     }
+ 
+  return {desable,response,
+    exchangeData,loading,
     scanForPeripherals,
     requestPermissions,
     connectToDevice,

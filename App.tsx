@@ -4,7 +4,7 @@ import useBLE from './useBle'
 
 export const App = () => {
   const {width} = useWindowDimensions()
-  const {allDevices,connectedDevice,disconnectFromDevice,scanForPeripherals,connectToDevice,requestPermissions, exchangeData} = useBLE();
+  const {allDevices,connectedDevice,desable,disconnectFromDevice,scanForPeripherals,connectToDevice,requestPermissions, exchangeData,response,loading} = useBLE();
 
   const scandevices =async ()=>{
     requestPermissions((permitido:boolean)=>{
@@ -35,10 +35,10 @@ export const App = () => {
         {allDevices.map(i=>(
           <Pressable    style={({pressed})=>[
             {...styles.boton, width:width*0.4, marginBottom:10},
-    
             pressed && styles.botonPressed
         ]}
-        onPress={()=>connectToDevice(i)}  >
+        onPress={()=>connectToDevice(i)} 
+        key={i.id} >
              <Text>
           {i.name}
         </Text>
@@ -53,6 +53,7 @@ export const App = () => {
       </View>
   { connectedDevice  !== null && <View>
     <Pressable
+    disabled={desable}
      style={({pressed})=>[
       {...styles.boton, width:width*0.4, marginBottom:10},
 
@@ -63,6 +64,7 @@ export const App = () => {
       <Text style={{color:'white', textAlign:'center'}}>Desconetar</Text>
     </Pressable>
     <Pressable
+    disabled={desable}
      style={({pressed})=>[
       {...styles.boton, width:width*0.4, marginBottom:10},
 
@@ -73,8 +75,18 @@ export const App = () => {
       <Text style={{color:'white', textAlign:'center'}}>Enviar mensaje de prueba</Text>
     </Pressable>
   </View>}
-  
+  {response!==null && connectedDevice!==null &&
+    <View>
+      <Text>{response}</Text>
     </View>
+    
+  }
+    </View>
+    {loading &&<View>
+      <Text>
+        Cargando...
+      </Text>
+    </View>}
     </SafeAreaView>
   )
 }
