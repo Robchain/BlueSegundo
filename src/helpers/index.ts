@@ -1,0 +1,1 @@
+export {formatearTexto} from './textos';
