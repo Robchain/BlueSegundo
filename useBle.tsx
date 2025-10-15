@@ -28,7 +28,8 @@ type VoidCallback = (result: boolean) => void;
 interface BluetoothLowEnergyApi {
   requestPermissions(cb: VoidCallback): Promise<void>;
   scanForPeripherals(): void;
-  connectToDevice: (deviceId: Device) => Promise<Device | undefined>;
+  connectToDevice: (deviceId: string) => Promise<Device | undefined>;
+  // connectToDevice: (deviceId: Device) => Promise<Device | undefined>;
   disconnectFromDevice: () => void;
   connectedDevice: Device | null;
   allDevices: Device[];
@@ -39,6 +40,7 @@ interface BluetoothLowEnergyApi {
   bloqueadoM:boolean;
   desable:boolean;
   texto:string;
+  funcionPrueba:()=>void;
   error:boolean;
   setresponse:React.Dispatch<React.SetStateAction<string | null>>;
   setTexto:React.Dispatch<React.SetStateAction<string>>;
@@ -153,11 +155,15 @@ function useBLE(): BluetoothLowEnergyApi {
               }
               return prevState;
             });
+            if(device){
+              console.log(device.id)
+            }
             //coneccion en sistemas IOS
             if(Platform.Version<'16' &&Platform.Version > '14'  && Platform.OS==='ios'){
-              console.log('version 15 o menores');
+        // la version anterior
+                console.log('version 15 o menores');
               setloading(false);
-              
+         
               device.connect().then((device)=>{ // conecta al dispositivo
                 setloading(false);
               setConnectedDevice(device);//setea la conecxion
@@ -179,6 +185,7 @@ function useBLE(): BluetoothLowEnergyApi {
             }else if(Platform.Version >= '16'&& Platform.OS==='ios'){
               // coneccion
               setloading(false);
+              console.log(device.id);
               if(allDevices.length>0){
               console.log('version 16 o mayores');
               device.connect().then((device)=>{
@@ -227,8 +234,59 @@ function useBLE(): BluetoothLowEnergyApi {
 
 
 
+  const funcionPrueba =async ()=> {
+   
+       connectToDevice('012F465E-DB7F-61EC-533A-D2427DC15A11').then(
+      (dev)=>{
+        setconectado(true);
+        exchangeData(dev!)
+      }
+    ).catch((i)=>{
+      setconectado(false);
+      console.log(i)
+    })
 
-  const connectToDevice = async (device: Device) => {
+   
+    // const deviceConnection = await bleManager.connectToDevice('2CFB1C23-836D-280C-EC23-BEAF673373F0');
+    //   setConnectedDevice(deviceConnection);
+    //   await deviceConnection.discoverAllServicesAndCharacteristics();
+    //   setconectado(true);
+    //   exchangeData(deviceConnection);
+  }
+
+
+  // este probado en ios 15
+  // const funcionPrueba =async ()=> {
+
+  //   connectToDevice('6599CF17-A2A5-D3C6-712B-2505C67F5360').then(
+  //     (dev)=>{
+  //       setconectado(true);
+  //       exchangeData(dev!)
+  //     }
+  //   ).catch((i)=>{
+  //     console.log(i)
+  //   })
+
+  // }
+
+
+  const connectToDevice = async (device: string) => {
+    try {
+      setresponse('');
+      console.log("contectar")
+      const deviceConnection = await bleManager.connectToDevice(device);
+      setConnectedDevice(deviceConnection);
+      await deviceConnection.discoverAllServicesAndCharacteristics();
+      bleManager.stopDeviceScan();
+      return deviceConnection;
+    } catch (e) {
+      bleManager.stopDeviceScan();
+      console.log('Fallo y se dejo de escanear');
+      setconectado(false);
+    }
+  };
+
+  const connectToDeviceO = async (device: Device) => {
     try {
       setresponse('');
       console.log("contectar")
@@ -242,7 +300,6 @@ function useBLE(): BluetoothLowEnergyApi {
       console.log('Fallo y se dejo de escanear');
     }
   };
-
   const disconnectFromDevice = () => {
     if (connectedDevice) {
       bleManager.cancelDeviceConnection(connectedDevice.id);
@@ -309,7 +366,7 @@ function useBLE(): BluetoothLowEnergyApi {
           setpase('pase');
           setdesable(false);
         })  
-      }, 3000);
+      }, 2000);
       
       setTimeout(() => {
         bleManager.cancelDeviceConnection(device.id);
@@ -321,9 +378,10 @@ function useBLE(): BluetoothLowEnergyApi {
       setBloqueadoM(false);
       setError(false);
       bleManager.stopDeviceScan();
-         }, 3500);
+         }, 2500);
     } catch (e) {
       console.log('fallo en enviar');
+      setconectado(false);
       setBloqueadoM(false);
     }
   };
@@ -401,6 +459,7 @@ function useBLE(): BluetoothLowEnergyApi {
     heartRate,
     bleManager,
     texto, setTexto,
+    funcionPrueba,
     bloqueadoM,  setBloqueadoM,setloading,setError
   };
 }
